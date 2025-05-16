@@ -1,11 +1,11 @@
 import './styles/main.css';
 import './styles/components.css';
 import ProductStore from './store/ProductStore';
-import CartStore, { CartItem } from './store/CartStore';
+import CartStore from './store/CartStore';
 import AppDispatcher from './dispatcher/AppDispatcher';
 import './components/ProductCard';
 import './components/ProductGrid';
-import { Cart } from './components/Cart';
+import './components/Cart';
 import { CartActionTypes } from './actions/CartActions';
 
 // Initialize stores
@@ -36,101 +36,34 @@ const main = document.createElement('main');
 main.className = 'main';
 main.innerHTML = '<product-grid></product-grid>';
 
-// Create cart sidebar
-const cartSidebar = document.createElement('aside');
-cartSidebar.className = 'cart-sidebar';
-cartSidebar.innerHTML = `
-    <div class="cart-header">
-        <h2>Shopping Cart</h2>
-        <button class="close-cart">×</button>
-    </div>
-    <div class="cart-items"></div>
-    <div class="cart-footer">
-        <div class="total-amount">$0.00</div>
-        <button class="checkout-btn">Checkout</button>
-    </div>
-`;
-
 // Add elements to app
 app.appendChild(header);
 app.appendChild(main);
-app.appendChild(cartSidebar);
 
 // Add app to body
 document.body.appendChild(app);
 
-// Cart functionality
+// Add shopping cart
+const shoppingCart = document.createElement('shopping-cart');
+document.body.appendChild(shoppingCart);
+
+// Add cart toggle functionality
 const cartIcon = header.querySelector('.cart-icon');
-const cartSidebarElement = document.querySelector('.cart-sidebar');
-const closeCartButton = cartSidebarElement?.querySelector('.close-cart');
-const cartItemsContainer = cartSidebarElement?.querySelector('.cart-items');
-const totalAmountElement = cartSidebarElement?.querySelector('.total-amount');
-const cartCountElement = header.querySelector('.cart-count');
+const cartCount = header.querySelector('.cart-count');
 
-function updateCart() {
-    if (!cartItemsContainer || !totalAmountElement || !cartCountElement) return;
-
-    const items = CartStore.getItems();
-    cartCountElement.textContent = items.length.toString();
-    
-    if (items.length === 0) {
-        cartItemsContainer.innerHTML = '<div class="empty-cart">Your cart is empty</div>';
-        totalAmountElement.textContent = '$0.00';
-        return;
+// Update cart count
+function updateCartCount() {
+    if (cartCount) {
+        cartCount.textContent = CartStore.getItems().length.toString();
     }
-
-    cartItemsContainer.innerHTML = items.map((item: CartItem) => `
-        <div class="cart-item">
-            <img src="${item.image}" alt="${item.name}">
-            <div class="item-details">
-                <h3>${item.name}</h3>
-                <p>$${item.price.toFixed(2)}</p>
-                <div class="quantity-controls">
-                    <button class="quantity-btn" data-action="decrease" data-id="${item.id}">-</button>
-                    <span class="quantity">${item.quantity}</span>
-                    <button class="quantity-btn" data-action="increase" data-id="${item.id}">+</button>
-                </div>
-            </div>
-            <button class="remove-item" data-id="${item.id}">×</button>
-        </div>
-    `).join('');
-
-    totalAmountElement.textContent = `$${CartStore.getTotal().toFixed(2)}`;
 }
 
-// Event Listeners
-cartIcon?.addEventListener('click', () => {
-    cartSidebarElement?.classList.add('active');
-});
-
-closeCartButton?.addEventListener('click', () => {
-    cartSidebarElement?.classList.remove('active');
-});
-
-cartItemsContainer?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const id = target.dataset.id;
-
-    if (target.classList.contains('remove-item') && id) {
-        CartStore.removeItem(id);
-    } else if (target.classList.contains('quantity-btn') && id) {
-        const action = target.dataset.action as 'increase' | 'decrease';
-        const item = CartStore.getItems().find(item => item.id === id);
-        if (item) {
-            if (action === 'increase') {
-                CartStore.updateQuantity(id, item.quantity + 1);
-            } else if (action === 'decrease') {
-                CartStore.updateQuantity(id, item.quantity - 1);
-            }
-        }
-    }
-});
-
 // Listen for cart changes
-CartStore.on('change', updateCart);
+CartStore.on('change', updateCartCount);
 
-// Initial cart update
-updateCart();
+cartIcon?.addEventListener('click', () => {
+    shoppingCart.dispatchEvent(new Event('toggle'));
+});
 
 // Connect store with dispatcher
 AppDispatcher.on('action', (action) => {
@@ -148,30 +81,6 @@ AppDispatcher.on('action', (action) => {
             CartStore.clearCart();
             break;
     }
-});
-
-// Add to cart functionality
-document.querySelectorAll('.add-to-cart').forEach(button => {
-    button.addEventListener('click', (e) => {
-        const target = e.target as HTMLButtonElement;
-        const productCard = target.closest('.product-card');
-        if (productCard) {
-            const productName = productCard.querySelector('h3')?.textContent || '';
-            const productPrice = parseFloat(productCard.querySelector('.price')?.textContent?.replace('$', '') || '0');
-            const productImage = productCard.querySelector('img')?.getAttribute('src') || '';
-            const productId = productName.toLowerCase().replace(/\s+/g, '-');
-
-            AppDispatcher.dispatch({
-                type: CartActionTypes.ADD_ITEM,
-                payload: {
-                    id: productId,
-                    name: productName,
-                    price: productPrice,
-                    image: productImage
-                }
-            });
-        }
-    });
 });
 
 // Newsletter form submission

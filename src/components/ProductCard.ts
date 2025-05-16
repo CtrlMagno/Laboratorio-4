@@ -26,6 +26,7 @@ export class ProductCard extends HTMLElement {
 
     private handleAddToCart = () => {
         if (this.product) {
+            console.log('Adding product to cart:', this.product);
             CartActions.addItem({
                 id: this.product.id.toString(),
                 name: this.product.title,

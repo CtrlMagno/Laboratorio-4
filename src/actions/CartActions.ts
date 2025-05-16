@@ -10,6 +10,7 @@ export const CartActionTypes = {
 
 export const CartActions = {
     addItem(item: Omit<CartItem, 'quantity'>): void {
+        console.log('CartActions: Dispatching ADD_ITEM', item);
         AppDispatcher.dispatch({
             type: CartActionTypes.ADD_ITEM,
             payload: item

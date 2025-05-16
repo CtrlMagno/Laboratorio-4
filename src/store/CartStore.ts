@@ -22,6 +22,8 @@ class CartStore extends EventEmitter {
             maxSize: 1000 // Larger size for cart items
         });
         this.loadFromCache();
+        // Ensure the store is ready to receive events
+        this.setMaxListeners(20);
     }
 
     static getInstance(): CartStore {
@@ -32,7 +34,7 @@ class CartStore extends EventEmitter {
     }
 
     private loadFromCache(): void {
-        const cachedItems = this.cacheManager.get(this.CACHE_KEY);
+        const cachedItems = this.cacheManager.get<CartItem[]>(this.CACHE_KEY);
         if (cachedItems) {
             this.items = cachedItems;
             this.emit('change');
@@ -40,11 +42,12 @@ class CartStore extends EventEmitter {
     }
 
     private saveToCache(): void {
-        this.cacheManager.set(this.CACHE_KEY, this.items);
+        this.cacheManager.set<CartItem[]>(this.CACHE_KEY, this.items);
     }
 
     getItems(): CartItem[] {
-        return this.items;
+        console.log('CartStore: Getting items', this.items);
+        return [...this.items];
     }
 
     getTotal(): number {
@@ -52,15 +55,19 @@ class CartStore extends EventEmitter {
     }
 
     addItem(item: Omit<CartItem, 'quantity'>): void {
+        console.log('CartStore: Adding item', item);
         const existingItem = this.items.find(i => i.id === item.id);
         
         if (existingItem) {
             existingItem.quantity += 1;
+            console.log('CartStore: Updated existing item quantity to', existingItem.quantity);
         } else {
             this.items.push({ ...item, quantity: 1 });
+            console.log('CartStore: Added new item');
         }
         
         this.saveToCache();
+        console.log('CartStore: Current items', this.items);
         this.emit('change');
     }
 

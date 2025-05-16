@@ -20,6 +20,7 @@ class AppDispatcher extends EventEmitter {
     }
 
     dispatch<T>(action: Action<T>): void {
+        console.log('AppDispatcher: Dispatching action', action);
         this.emit('action', action);
     }
 }

@@ -37,7 +37,7 @@ class ProductStore extends EventEmitter {
 
     private async loadProducts(): Promise<void> {
         // Try to get products from cache first
-        const cachedProducts = this.cacheManager.get(this.CACHE_KEY);
+        const cachedProducts = this.cacheManager.get<Product[]>(this.CACHE_KEY);
         if (cachedProducts) {
             this.products = cachedProducts;
             this.emit('change');
@@ -57,7 +57,7 @@ class ProductStore extends EventEmitter {
             this.products = await response.json();
             
             // Save to cache
-            this.cacheManager.set(this.CACHE_KEY, this.products);
+            this.cacheManager.set<Product[]>(this.CACHE_KEY, this.products);
             this.emit('change');
         } catch (error) {
             console.error('Error fetching products:', error);
